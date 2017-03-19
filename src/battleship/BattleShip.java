@@ -7,6 +7,7 @@ package battleship;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -20,6 +21,7 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.image.Image;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
@@ -34,8 +36,6 @@ import javafx.stage.Stage;
  * @author ShadowX
  */
 public class BattleShip extends Application {
-    //https://gamedevelopment.tutsplus.com/tutorials/introduction-to-javafx-for-game-development--cms-23835
-    //Due March 4
 /*10 points for graphics
 10 points objects
 10 points polymorphism
@@ -46,7 +46,12 @@ public class BattleShip extends Application {
 10 points - maps & keys
 20 points playable, worthwhile game*/
     int turn = 0;
-    int action = 0;
+    int action = 2;
+    int ship = 1;
+    int placeholder = 1;
+    boolean reset = true;
+    Location loc;
+    Ship current;
     Map<Location, String> coordinates1 = new HashMap();
     Map<Location, String> coordinates2 = new HashMap();
     Location[][] board1 = new Location[10][10];
@@ -158,7 +163,6 @@ public class BattleShip extends Application {
             }
         }
 
-        ArrayList<String> input = new ArrayList();
         scene.setOnKeyPressed(
                 new EventHandler<KeyEvent>() {
             public void handle(KeyEvent e) {
@@ -168,18 +172,18 @@ public class BattleShip extends Application {
                     System.out.println(code);
                     input.add(code);
                 }
+                System.out.println(input);
             }
         });
 
-        scene.setOnKeyReleased(
-                new EventHandler<KeyEvent>() {
-            public void handle(KeyEvent e) {
-                String code = e.getCode().toString();
-                input.remove(code);
-            }
-        });
-
-        AnimationTimer a = new AnimationTimer() {
+//        scene.setOnKeyReleased(
+//                new EventHandler<KeyEvent>() {
+//            public void handle(KeyEvent e) {
+//                String code = e.getCode().toString();
+//                input.remove(code);
+//            }
+//        });
+        new AnimationTimer() {
             public void handle(long currentNanoTime) {
                 if (turn == -1) {
                     gc.clearRect(0, 0, 800, 50);
@@ -188,18 +192,21 @@ public class BattleShip extends Application {
                     gc.strokeText(text, 40, 36);
                     showBoard(gc);
                 } else {
+                    //System.out.println("update");
                     update(gc, canvas);
-                    if (turn == 0) {
-                        setup(gc, canvas);
+                    if (turn < 2) {
+                        //System.out.println("setup");
+                        setup(gc);
                     } else {
-                        move(gc);
+//                        System.out.println("move");
+//                        move(gc);
+                        System.out.println("checkdeath");
+                        checkDeath();
                     }
-                    checkDeath();
                 }
             }
-        };
+        }.start();
         primaryStage.show();
-        new Thread();
     }
 
     private void update(GraphicsContext gc, Canvas canvas) {
@@ -335,167 +342,191 @@ public class BattleShip extends Application {
         }
     }
 
-    private void setup(GraphicsContext gc, Canvas canvas) {
-        String text = "Welcome to Battleship!";
-        gc.fillText(text, 40, 36);
-        gc.strokeText(text, 40, 36);
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException ex) {
-            Logger.getLogger(BattleShip.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        gc.clearRect(0, 0, 800, 50);
+    private void setup(GraphicsContext gc) {
+        if (turn == 0) {
+            String text = "Welcome to Battleship!";
+            gc.fillText(text, 40, 36);
+            gc.strokeText(text, 40, 36);
 
-        text = "Player 1 please use the arrow keys to position your ships, R to rotate, and Enter to confirm.";
-        gc.fillText(text, 40, 36);
-        gc.strokeText(text, 40, 36);
+            text = "Player 1 please use the arrow keys to position your ships, R to rotate, and Enter to confirm.";
+            gc.fillText(text, 40, 50);
+            gc.strokeText(text, 40, 50);
 
-        for (int ship = 1; ship <= 5; ship++) {
-            Ship current;
-            Location loc = new Location(63, 473);
+            if (reset) {
+                loc = new Location(63, 23);
+                reset = false;
+            }
             if (ship == 1) {
                 current = new Carrier("not");
+                ship = 0;
             } else if (ship == 2) {
                 current = new Bship("not");
+                ship = 0;
             } else if (ship == 3) {
                 current = new Submarine("not");
+                ship = 0;
             } else if (ship == 4) {
                 current = new Frigate("not");
-            } else {
+                ship = 0;
+            } else if (ship == 5) {
                 current = new PTBoat("not");
+                ship = 0;
             }
-            boolean notdone = true;
-            while (notdone) {
-                System.out.println("in loop");
-                update(gc, canvas);
+
+            if (current.dir.equals("vert")) {
+                gc.drawImage(current.imgvert, loc.x, loc.y);
+            } else {
+                gc.drawImage(current.img, loc.x, loc.y);
+            }
+            System.out.println(input);
+            if (input.contains("LEFT")) {
+                if (loc.x > 23) {
+                    loc.x -= 40;
+                }
+                input.remove("LEFT");
+            } else if (input.contains("RIGHT")) {
                 if (current.dir.equals("vert")) {
-                    gc.drawImage(current.img, loc.x, loc.y);
-                } else {
-                    gc.drawImage(current.img, loc.x, loc.y);
+                    if (loc.x <= 423 - 80) {
+                        loc.x += 40;
+                    }
+                } else if (loc.x <= 423 - (current.size + 1) * 40) {
+                    loc.x += 40;
                 }
-                if (input.contains("LEFT")) {
-                    if (loc.x > 23) {
-                        loc.x -= 40;
+                input.remove("RIGHT");
+            } else if (input.contains("UP")) {
+                if (loc.y > 63) {
+                    loc.y -= 40;
+                }
+                input.remove("UP");
+            } else if (input.contains("DOWN")) {
+                if (current.dir.equals("vert")) {
+                    if (loc.y <= 463 - (current.size + 1) * 40) {
+                        loc.y += 40;
                     }
-                } else if (input.contains("RIGHT")) {
-                    if (current.dir.equals("vert")) {
-                        if (loc.x <= 423 - 40) {
-                            loc.x += 40;
-                        }
-
-                    } else if (loc.x <= 423 - current.size * 40) {
-                        loc.x += 40;
+                } else if (loc.y <= 463 - 80) {
+                    loc.y += 40;
+                }
+                input.remove("DOWN");
+            } else if (input.contains("R")) {
+                if (current.dir.equals("vert")) {
+                    current.dir = "not";
+                    if (loc.x > 423 - current.size * 40) {
+                        loc.x = 423 - current.size * 40;
                     }
-
-                } else if (input.contains("UP")) {
-                    if (loc.y > 63) {
-                        loc.y -= 40;
+                } else {
+                    current.dir = "vert";
+                    if (loc.y > 463 - current.size * 40) {
+                        loc.y = 463 - current.size * 40;
                     }
-                } else if (input.contains("DOWN")) {
-                    if (current.dir.equals("vert")) {
-                        if (loc.x <= 463 - current.size * 40) {
-                            loc.x += 40;
-                        }
-                    } else if (loc.x <= 463 - 40) {
-                        loc.x += 40;
-                    }
-                } else if (input.contains("R")) {
-                    if (current.dir.equals("vert")) {
-                        current.dir = "not";
-                        if (loc.x > 423 - current.size * 40) {
-                            loc.x = 423 - current.size * 40;
-                        }
-                    } else {
-                        current.dir = "vert";
-                        if (loc.y > 463 - current.size * 40) {
-                            loc.y = 463 - current.size * 40;
-                        }
-
-                    }
-                } else if (input.contains("ENTER")) {
-                    notdone = false;
+                }
+                input.remove("R");
+            }
+            if (input.contains("ENTER")) {
+                ships1.put(loc, current);
+                System.out.println("placed");
+                reset = true;
+                input.remove("ENTER");
+                if (placeholder == 5) {
+                    ship = 1;
+                    placeholder = 1;
+                    turn++;
+                } else {
+                    placeholder++;
+                    ship = placeholder;
                 }
             }
-            ships1.put(loc, current);
-        }
+        } else if (turn == 1) {
+            gc.clearRect(0, 0, 800, 63);
 
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException ex) {
-            Logger.getLogger(BattleShip.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        gc.clearRect(0, 0, 800, 50);
+            String text = "Player 2 please use the arrow keys to position your ships, R to rotate, and Enter to confirm.";
+            gc.fillText(text, 40, 36);
+            gc.strokeText(text, 40, 36);
 
-        text = "Player 2 please use the arrow keys to position your ships, R to rotate, and Enter to confirm.";
-        gc.fillText(text, 40, 36);
-        gc.strokeText(text, 40, 36);
-
-        for (int ship = 1; ship <= 5; ship++) {
-            Ship current;
-            Location loc = new Location(63, 473);
+            if (reset) {
+                loc = new Location(63, 473);
+                reset = false;
+            }
             if (ship == 1) {
                 current = new Carrier("not");
+                ship = 0;
             } else if (ship == 2) {
                 current = new Bship("not");
+                ship = 0;
             } else if (ship == 3) {
                 current = new Submarine("not");
+                ship = 0;
             } else if (ship == 4) {
                 current = new Frigate("not");
-            } else {
+                ship = 0;
+            } else if (ship == 5) {
                 current = new PTBoat("not");
+                ship = 0;
             }
-            boolean notdone = true;
-            while (notdone) {
-                update(gc, canvas);
+
+            if (current.dir.equals("vert")) {
+                gc.drawImage(current.imgvert, loc.x, loc.y);
+            } else {
+                gc.drawImage(current.img, loc.x, loc.y);
+            }
+            if (input.contains("LEFT")) {
+                if (loc.x > 473) {
+                    loc.x -= 40;
+                }
+                input.remove("LEFT");
+            } else if (input.contains("RIGHT")) {
                 if (current.dir.equals("vert")) {
-                    gc.drawImage(current.img, loc.x, loc.y);
-                } else {
-                    gc.drawImage(current.img, loc.x, loc.y);
+                    if (loc.x <= 873 - 80) {
+                        loc.x += 40;
+                    }
+                } else if (loc.x <= 873 - (current.size + 1) * 40) {
+                    loc.x += 40;
                 }
-                if (input.contains("LEFT")) {
-                    if (loc.x > 473) {
-                        loc.x -= 40;
+                input.remove("RIGHT");
+            } else if (input.contains("UP")) {
+                if (loc.y > 63) {
+                    loc.y -= 40;
+                }
+                input.remove("UP");
+            } else if (input.contains("DOWN")) {
+                if (current.dir.equals("vert")) {
+                    if (loc.y <= 463 - (current.size + 1) * 40) {
+                        loc.y += 40;
                     }
-                } else if (input.contains("RIGHT")) {
-                    if (current.dir.equals("vert")) {
-                        if (loc.x <= 873 - 40) {
-                            loc.x += 40;
-                        }
+                } else if (loc.y <= 463 - 80) {
+                    loc.y += 40;
+                }
+                input.remove("DOWN");
+            } else if (input.contains("R")) {
+                if (current.dir.equals("vert")) {
+                    System.out.println("checked");
+                    current.dir = "not";
+                    if (loc.x > 873 - current.size * 40) {
+                        loc.x = 873 - current.size * 40;
+                    }
+                } else {
+                    current.dir = "vert";
+                    if (loc.y > 463 - current.size * 40) {
+                        loc.y = 463 - current.size * 40;
+                    }
+                }
+                input.remove("R");
+            }
+            if (input.contains("ENTER")) {
+                System.out.println("placed");
+                ships2.put(loc, current);
+                reset = true;
+                input.remove("ENTER");
 
-                    } else if (loc.x <= 873 - current.size * 40) {
-                        loc.x += 40;
-                    }
-
-                } else if (input.contains("UP")) {
-                    if (loc.y > 63) {
-                        loc.y -= 40;
-                    }
-                } else if (input.contains("DOWN")) {
-                    if (current.dir.equals("vert")) {
-                        if (loc.x <= 463 - current.size * 40) {
-                            loc.x += 40;
-                        }
-                    } else if (loc.x <= 463 - 40) {
-                        loc.x += 40;
-                    }
-                } else if (input.contains("R")) {
-                    if (current.dir.equals("vert")) {
-                        current.dir = "not";
-                        if (loc.x > 873 - current.size * 40) {
-                            loc.x = 873 - current.size * 40;
-                        }
-                    } else {
-                        current.dir = "vert";
-                        if (loc.y > 463 - current.size * 40) {
-                            loc.y = 463 - current.size * 40;
-                        }
-
-                    }
-                } else if (input.contains("ENTER")) {
-                    notdone = false;
+                if (placeholder == 5) {
+                    ship = 1;
+                    placeholder = 1;
+                    turn++;
+                } else {
+                    placeholder++;
+                    ship = placeholder;
                 }
             }
-            ships1.put(loc, current);
+
         }
     }
 
@@ -547,6 +578,12 @@ public class BattleShip extends Application {
                 gc.strokeRect(l.x, l.y, 40, 40);
             }
         }
+        for (Location[] arr : board2) {
+            for (Location l : arr) {
+                gc.fillRect(l.x, l.y, 40, 40);
+                gc.strokeRect(l.x, l.y, 40, 40);
+            }
+        }
 
         for (Location l : coordinates1.keySet()) {
             if (coordinates1.get(l).equals("hit")) {
@@ -558,6 +595,18 @@ public class BattleShip extends Application {
                 gc.fillRect(l.x, l.y, 40, 40);
             }
         }
+        for (Location l : coordinates2.keySet()) {
+            if (coordinates2.get(l).equals("hit")) {
+                gc.setFill(Color.RED);
+                gc.fillRect(l.x, l.y, 40, 40);
+            }
+
+            if (coordinates1.get(l).equals("miss")) {
+                gc.setFill(Color.DARKBLUE);
+                gc.fillRect(l.x, l.y, 40, 40);
+            }
+        }
+
         for (Location l : ships1.keySet()) {
             Ship current = ships1.get(l);
             if (current instanceof Carrier) {
@@ -597,62 +646,44 @@ public class BattleShip extends Application {
             }
         }
 
-        gc.setFill(Color.DARKTURQUOISE);
-        for (Location[] arr : board2) {
-            for (Location l : arr) {
-                gc.fillRect(l.x, l.y, 40, 40);
-                gc.strokeRect(l.x, l.y, 40, 40);
-            }
-        }
-        gc.setFill(Color.RED);
-        for (Location l : coordinates2.keySet()) {
-            if (coordinates2.get(l).equals("hit")) {
-                gc.fillRect(l.x, l.y, 40, 40);
-            }
-
-            if (coordinates1.get(l).equals("miss")) {
-                gc.setFill(Color.DARKBLUE);
-                gc.fillRect(l.x, l.y, 40, 40);
-            }
-        }
         for (Location l : ships2.keySet()) {
-                Ship current = ships2.get(l);
-                if (current instanceof Carrier) {
-                    if (current.dir.equals("vert")) {
-                        gc.drawImage(current.imgvert, l.x, l.y);
-                    } else {
-                        gc.drawImage(current.img, l.x, l.y);
-                    }
-                }
-                if (current instanceof Bship) {
-                    if (current.dir.equals("vert")) {
-                        gc.drawImage(current.imgvert, l.x, l.y);
-                    } else {
-                        gc.drawImage(current.img, l.x, l.y);
-                    }
-                }
-                if (current instanceof Submarine) {
-                    if (current.dir.equals("vert")) {
-                        gc.drawImage(current.imgvert, l.x, l.y);
-                    } else {
-                        gc.drawImage(current.img, l.x, l.y);
-                    }
-                }
-                if (current instanceof Frigate) {
-                    if (current.dir.equals("vert")) {
-                        gc.drawImage(current.imgvert, l.x, l.y);
-                    } else {
-                        gc.drawImage(current.img, l.x, l.y);
-                    }
-                }
-                if (current instanceof PTBoat) {
-                    if (current.dir.equals("vert")) {
-                        gc.drawImage(current.imgvert, l.x, l.y);
-                    } else {
-                        gc.drawImage(current.img, l.x, l.y);
-                    }
+            Ship current = ships2.get(l);
+            if (current instanceof Carrier) {
+                if (current.dir.equals("vert")) {
+                    gc.drawImage(current.imgvert, l.x, l.y);
+                } else {
+                    gc.drawImage(current.img, l.x, l.y);
                 }
             }
+            if (current instanceof Bship) {
+                if (current.dir.equals("vert")) {
+                    gc.drawImage(current.imgvert, l.x, l.y);
+                } else {
+                    gc.drawImage(current.img, l.x, l.y);
+                }
+            }
+            if (current instanceof Submarine) {
+                if (current.dir.equals("vert")) {
+                    gc.drawImage(current.imgvert, l.x, l.y);
+                } else {
+                    gc.drawImage(current.img, l.x, l.y);
+                }
+            }
+            if (current instanceof Frigate) {
+                if (current.dir.equals("vert")) {
+                    gc.drawImage(current.imgvert, l.x, l.y);
+                } else {
+                    gc.drawImage(current.img, l.x, l.y);
+                }
+            }
+            if (current instanceof PTBoat) {
+                if (current.dir.equals("vert")) {
+                    gc.drawImage(current.imgvert, l.x, l.y);
+                } else {
+                    gc.drawImage(current.img, l.x, l.y);
+                }
+            }
+        }
     }
 
     /**
