@@ -36,7 +36,8 @@ import javafx.stage.Stage;
  * @author ShadowX
  */
 public class BattleShip extends Application {
-/*10 points for graphics
+
+    /*10 points for graphics
 10 points objects
 10 points polymorphism
 10 points abstract classes
@@ -49,7 +50,9 @@ public class BattleShip extends Application {
     int action = 2;
     int ship = 1;
     int placeholder = 1;
+    int counter = 0;
     boolean reset = true;
+    boolean killedThisTurn = false;
     Location loc;
     Ship current;
     Map<Location, String> coordinates1 = new HashMap();
@@ -60,6 +63,8 @@ public class BattleShip extends Application {
     Button[][] board2button = new Button[10][10];
     Map<Location, Ship> ships1 = new HashMap();
     Map<Location, Ship> ships2 = new HashMap();
+    Map<Location, Ship> deadships1 = new HashMap();
+    Map<Location, Ship> deadships2 = new HashMap();
     ArrayList<String> input = new ArrayList();
 
     @Override
@@ -97,42 +102,9 @@ public class BattleShip extends Application {
                 root.getChildren().add(board2button[i][j]);
 
                 board1button[i][j].setOnAction(new EventHandler<ActionEvent>() {
-
                     @Override
                     public void handle(ActionEvent event) {
-                        if (turn % 2 == 0 && action % 2 == 0) {
-                            boolean hit = false;
-                            for (Location l : ships2.keySet()) {
-                                int h, v;
-                                if (ships2.get(l).dir.equals("vert")) {
-                                    h = 1;
-                                    v = ships2.get(l).size;
-                                } else {
-                                    v = 1;
-                                    h = ships2.get(l).size;
-                                }
-                                if ((((Button) event.getSource()).getLayoutX() >= l.x)
-                                        && (((Button) event.getSource()).getLayoutX() < l.x + h * 40)) {
-                                    if ((((Button) event.getSource()).getLayoutY() >= l.y)
-                                            && (((Button) event.getSource()).getLayoutY() < l.y + v * 40)) {
-                                        hit = true;
-                                        coordinates1.put(new Location(((Button) event.getSource()).getLayoutX(), ((Button) event.getSource()).getLayoutX()), "hit");
-                                        ships2.get(l).health -= 1;
-                                    }
-                                }
-                            }
-                            if (!hit) {
-                                coordinates1.put(new Location(((Button) event.getSource()).getLayoutX(), ((Button) event.getSource()).getLayoutX()), "miss");
-                            }
-                            action++;
-                        }
-                    }
-                });
-                board2button[i][j].setOnAction(new EventHandler<ActionEvent>() {
-
-                    @Override
-                    public void handle(ActionEvent event) {
-                        if (turn % 2 == 1 && action % 2 == 1) {
+                        if (turn % 2 == 1 && action % 2 == 1 && turn >= 2) {
                             boolean hit = false;
                             for (Location l : ships1.keySet()) {
                                 int h, v;
@@ -148,13 +120,44 @@ public class BattleShip extends Application {
                                     if ((((Button) event.getSource()).getLayoutY() >= l.y)
                                             && (((Button) event.getSource()).getLayoutY() < l.y + v * 40)) {
                                         hit = true;
-                                        coordinates1.put(new Location(((Button) event.getSource()).getLayoutX(), ((Button) event.getSource()).getLayoutX()), "hit");
+                                        coordinates1.put(new Location(((Button) event.getSource()).getLayoutY(), ((Button) event.getSource()).getLayoutX()), "hit");
                                         ships1.get(l).health -= 1;
                                     }
                                 }
                             }
                             if (!hit) {
-                                coordinates1.put(new Location(((Button) event.getSource()).getLayoutX(), ((Button) event.getSource()).getLayoutX()), "miss");
+                                coordinates1.put(new Location(((Button) event.getSource()).getLayoutY(), ((Button) event.getSource()).getLayoutX()), "miss");
+                            }
+                            action++;
+                        }
+                    }
+                });
+                board2button[i][j].setOnAction(new EventHandler<ActionEvent>() {
+                    @Override
+                    public void handle(ActionEvent event) {
+                        if (turn % 2 == 0 && action % 2 == 0 && turn >= 2) {
+                            boolean hit = false;
+                            for (Location l : ships2.keySet()) {
+                                int h, v;
+                                if (ships2.get(l).dir.equals("vert")) {
+                                    h = 1;
+                                    v = ships2.get(l).size;
+                                } else {
+                                    v = 1;
+                                    h = ships2.get(l).size;
+                                }
+                                if ((((Button) event.getSource()).getLayoutX() >= l.x)
+                                        && (((Button) event.getSource()).getLayoutX() < l.x + h * 40)) {
+                                    if ((((Button) event.getSource()).getLayoutY() >= l.y)
+                                            && (((Button) event.getSource()).getLayoutY() < l.y + v * 40)) {
+                                        hit = true;
+                                        coordinates2.put(new Location(((Button) event.getSource()).getLayoutY(), ((Button) event.getSource()).getLayoutX()), "hit");
+                                        ships2.get(l).health -= 1;
+                                    }
+                                }
+                            }
+                            if (!hit) {
+                                coordinates2.put(new Location(((Button) event.getSource()).getLayoutY(), ((Button) event.getSource()).getLayoutX()), "miss");
                             }
                             action++;
                         }
@@ -169,39 +172,28 @@ public class BattleShip extends Application {
                 String code = e.getCode().toString();
                 // only add once... prevent duplicates
                 if (!input.contains(code)) {
-                    System.out.println(code);
                     input.add(code);
                 }
-                System.out.println(input);
             }
         });
 
-//        scene.setOnKeyReleased(
-//                new EventHandler<KeyEvent>() {
-//            public void handle(KeyEvent e) {
-//                String code = e.getCode().toString();
-//                input.remove(code);
-//            }
-//        });
         new AnimationTimer() {
             public void handle(long currentNanoTime) {
                 if (turn == -1) {
                     gc.clearRect(0, 0, 800, 50);
                     String text = "Player " + checkWinner() + " wins!";
-                    gc.fillText(text, 40, 36);
-                    gc.strokeText(text, 40, 36);
+                    gc.setFill(Color.BLACK);
+                    gc.fillText(text, 23, 36);
+                    gc.strokeText(text, 23, 36);
                     showBoard(gc);
                 } else {
-                    //System.out.println("update");
                     update(gc, canvas);
                     if (turn < 2) {
-                        //System.out.println("setup");
                         setup(gc);
                     } else {
-//                        System.out.println("move");
-//                        move(gc);
-                        System.out.println("checkdeath");
-                        checkDeath();
+                        Font larger = new Font("Regular", 20);
+                        gc.setFont(larger);
+                        move(gc);
                     }
                 }
             }
@@ -226,19 +218,70 @@ public class BattleShip extends Application {
                     gc.strokeRect(l.x, l.y, 40, 40);
                 }
             }
-
             for (Location l : coordinates1.keySet()) {
                 if (coordinates1.get(l).equals("hit")) {
                     gc.setFill(Color.RED);
                     gc.fillRect(l.x, l.y, 40, 40);
+                    gc.strokeRect(l.x, l.y, 40, 40);
                 }
                 if (coordinates1.get(l).equals("miss")) {
                     gc.setFill(Color.DARKBLUE);
                     gc.fillRect(l.x, l.y, 40, 40);
+                    gc.strokeRect(l.x, l.y, 40, 40);
+                }
+            }
+            for (Location l : coordinates2.keySet()) {
+                if (coordinates2.get(l).equals("hit")) {
+                    gc.setFill(Color.RED);
+                    gc.fillRect(l.x, l.y, 40, 40);
+                    gc.strokeRect(l.x, l.y, 40, 40);
+                }
+                if (coordinates2.get(l).equals("miss")) {
+                    gc.setFill(Color.DARKBLUE);
+                    gc.fillRect(l.x, l.y, 40, 40);
+                    gc.strokeRect(l.x, l.y, 40, 40);
                 }
             }
             for (Location l : ships1.keySet()) {
                 Ship current = ships1.get(l);
+                if (current instanceof Carrier) {
+                    if (current.dir.equals("vert")) {
+                        gc.drawImage(current.imgvert, l.x, l.y);
+                    } else {
+                        gc.drawImage(current.img, l.x, l.y);
+                    }
+                }
+                if (current instanceof Bship) {
+                    if (current.dir.equals("vert")) {
+                        gc.drawImage(current.imgvert, l.x, l.y);
+                    } else {
+                        gc.drawImage(current.img, l.x, l.y);
+                    }
+                }
+                if (current instanceof Submarine) {
+                    if (current.dir.equals("vert")) {
+                        gc.drawImage(current.imgvert, l.x, l.y);
+                    } else {
+                        gc.drawImage(current.img, l.x, l.y);
+                    }
+                }
+                if (current instanceof Frigate) {
+                    if (current.dir.equals("vert")) {
+                        gc.drawImage(current.imgvert, l.x, l.y);
+                    } else {
+                        gc.drawImage(current.img, l.x, l.y);
+                    }
+                }
+                if (current instanceof PTBoat) {
+                    if (current.dir.equals("vert")) {
+                        gc.drawImage(current.imgvert, l.x, l.y);
+                    } else {
+                        gc.drawImage(current.img, l.x, l.y);
+                    }
+                }
+            }
+            for (Location l : deadships1.keySet()) {
+                Ship current = deadships1.get(l);
                 if (current instanceof Carrier) {
                     if (current.dir.equals("vert")) {
                         gc.drawImage(current.imgvert, l.x, l.y);
@@ -290,19 +333,70 @@ public class BattleShip extends Application {
                     gc.strokeRect(l.x, l.y, 40, 40);
                 }
             }
-            gc.setFill(Color.RED);
-            for (Location l : coordinates2.keySet()) {
-                if (coordinates2.get(l).equals("hit")) {
+            for (Location l : coordinates1.keySet()) {
+                if (coordinates1.get(l).equals("hit")) {
+                    gc.setFill(Color.RED);
                     gc.fillRect(l.x, l.y, 40, 40);
+                    gc.strokeRect(l.x, l.y, 40, 40);
                 }
                 if (coordinates1.get(l).equals("miss")) {
                     gc.setFill(Color.DARKBLUE);
                     gc.fillRect(l.x, l.y, 40, 40);
+                    gc.strokeRect(l.x, l.y, 40, 40);
                 }
             }
-
+            for (Location l : coordinates2.keySet()) {
+                if (coordinates2.get(l).equals("hit")) {
+                    gc.setFill(Color.RED);
+                    gc.fillRect(l.x, l.y, 40, 40);
+                    gc.strokeRect(l.x, l.y, 40, 40);
+                }
+                if (coordinates2.get(l).equals("miss")) {
+                    gc.setFill(Color.DARKBLUE);
+                    gc.fillRect(l.x, l.y, 40, 40);
+                    gc.strokeRect(l.x, l.y, 40, 40);
+                }
+            }
             for (Location l : ships2.keySet()) {
                 Ship current = ships2.get(l);
+                if (current instanceof Carrier) {
+                    if (current.dir.equals("vert")) {
+                        gc.drawImage(current.imgvert, l.x, l.y);
+                    } else {
+                        gc.drawImage(current.img, l.x, l.y);
+                    }
+                }
+                if (current instanceof Bship) {
+                    if (current.dir.equals("vert")) {
+                        gc.drawImage(current.imgvert, l.x, l.y);
+                    } else {
+                        gc.drawImage(current.img, l.x, l.y);
+                    }
+                }
+                if (current instanceof Submarine) {
+                    if (current.dir.equals("vert")) {
+                        gc.drawImage(current.imgvert, l.x, l.y);
+                    } else {
+                        gc.drawImage(current.img, l.x, l.y);
+                    }
+                }
+                if (current instanceof Frigate) {
+                    if (current.dir.equals("vert")) {
+                        gc.drawImage(current.imgvert, l.x, l.y);
+                    } else {
+                        gc.drawImage(current.img, l.x, l.y);
+                    }
+                }
+                if (current instanceof PTBoat) {
+                    if (current.dir.equals("vert")) {
+                        gc.drawImage(current.imgvert, l.x, l.y);
+                    } else {
+                        gc.drawImage(current.img, l.x, l.y);
+                    }
+                }
+            }
+            for (Location l : deadships2.keySet()) {
+                Ship current = deadships2.get(l);
                 if (current instanceof Carrier) {
                     if (current.dir.equals("vert")) {
                         gc.drawImage(current.imgvert, l.x, l.y);
@@ -345,12 +439,13 @@ public class BattleShip extends Application {
     private void setup(GraphicsContext gc) {
         if (turn == 0) {
             String text = "Welcome to Battleship!";
-            gc.fillText(text, 40, 36);
-            gc.strokeText(text, 40, 36);
+            gc.setFill(Color.BLACK);
+            gc.fillText(text, 23, 36);
+            gc.strokeText(text, 23, 36);
 
             text = "Player 1 please use the arrow keys to position your ships, R to rotate, and Enter to confirm.";
-            gc.fillText(text, 40, 50);
-            gc.strokeText(text, 40, 50);
+            gc.fillText(text, 23, 50);
+            gc.strokeText(text, 23, 50);
 
             if (reset) {
                 loc = new Location(63, 23);
@@ -378,7 +473,6 @@ public class BattleShip extends Application {
             } else {
                 gc.drawImage(current.img, loc.x, loc.y);
             }
-            System.out.println(input);
             if (input.contains("LEFT")) {
                 if (loc.x > 23) {
                     loc.x -= 40;
@@ -423,7 +517,6 @@ public class BattleShip extends Application {
             }
             if (input.contains("ENTER")) {
                 ships1.put(loc, current);
-                System.out.println("placed");
                 reset = true;
                 input.remove("ENTER");
                 if (placeholder == 5) {
@@ -439,8 +532,9 @@ public class BattleShip extends Application {
             gc.clearRect(0, 0, 800, 63);
 
             String text = "Player 2 please use the arrow keys to position your ships, R to rotate, and Enter to confirm.";
-            gc.fillText(text, 40, 36);
-            gc.strokeText(text, 40, 36);
+            gc.setFill(Color.BLACK);
+            gc.fillText(text, 23, 36);
+            gc.strokeText(text, 23, 36);
 
             if (reset) {
                 loc = new Location(63, 473);
@@ -498,7 +592,6 @@ public class BattleShip extends Application {
                 input.remove("DOWN");
             } else if (input.contains("R")) {
                 if (current.dir.equals("vert")) {
-                    System.out.println("checked");
                     current.dir = "not";
                     if (loc.x > 873 - current.size * 40) {
                         loc.x = 873 - current.size * 40;
@@ -512,7 +605,6 @@ public class BattleShip extends Application {
                 input.remove("R");
             }
             if (input.contains("ENTER")) {
-                System.out.println("placed");
                 ships2.put(loc, current);
                 reset = true;
                 input.remove("ENTER");
@@ -531,31 +623,57 @@ public class BattleShip extends Application {
     }
 
     private void move(GraphicsContext gc) {
-        boolean notmove = true;
-        while (notmove) {
-            if (turn % 2 == action % 2 && turn % 2 == 0) {
+        if (turn % 2 == action % 2) {
+            gc.clearRect(0, 0, 800, 50);
+            String text = "Player " + (turn % 2 + 1) + " please choose where to fire.";
+            gc.setFill(Color.BLACK);
+            gc.fillText(text, 23, 36);
+            gc.strokeText(text, 23, 36);
+        } else if (counter >= 25) {
+            turn++;
+            counter = 0;
+            killedThisTurn = false;
+        } else {
+            checkDeath();
+            if (killedThisTurn) {
                 gc.clearRect(0, 0, 800, 50);
-                String text = "Player " + (turn % 2 + 1) + " please choose where to fire.";
-                gc.fillText(text, 40, 36);
-                gc.strokeText(text, 40, 36);
-            } else {
-                turn++;
-                notmove = false;
+                String text = "Player " + (turn % 2 + 1) + " you sunk a ship!!!!";
+                gc.setFill(Color.BLACK);
+                gc.fillText(text, 23, 36);
+                gc.strokeText(text, 23, 36);
             }
+            counter++;
         }
     }
 
     private void checkDeath() {
+        ArrayList<Location> toBeRemoved = new ArrayList();
         for (Location l : ships1.keySet()) {
             if (ships1.get(l).health <= 0) {
-                ships1.remove(l);
+                toBeRemoved.add(l);
             }
         }
+        if (!(toBeRemoved.isEmpty())) {
+            killedThisTurn = true;
+        }
+        for (Location l : toBeRemoved) {
+            deadships1.put(l, ships1.get(l));
+            ships1.remove(l);
+        }
+        toBeRemoved.clear();
         for (Location l : ships2.keySet()) {
             if (ships2.get(l).health <= 0) {
-                ships2.remove(l);
+                toBeRemoved.add(l);
             }
         }
+        if (!(toBeRemoved.isEmpty())) {
+            killedThisTurn = true;
+        }
+        for (Location l : toBeRemoved) {
+            deadships2.put(l, ships2.get(l));
+            ships2.remove(l);
+        }
+        toBeRemoved.clear();
         if (ships1.isEmpty() || ships2.isEmpty()) {
             turn = -1;
         }
@@ -589,21 +707,25 @@ public class BattleShip extends Application {
             if (coordinates1.get(l).equals("hit")) {
                 gc.setFill(Color.RED);
                 gc.fillRect(l.x, l.y, 40, 40);
+                gc.strokeRect(l.x, l.y, 40, 40);
             }
             if (coordinates1.get(l).equals("miss")) {
                 gc.setFill(Color.DARKBLUE);
                 gc.fillRect(l.x, l.y, 40, 40);
+                gc.strokeRect(l.x, l.y, 40, 40);
             }
         }
         for (Location l : coordinates2.keySet()) {
             if (coordinates2.get(l).equals("hit")) {
                 gc.setFill(Color.RED);
                 gc.fillRect(l.x, l.y, 40, 40);
+                gc.strokeRect(l.x, l.y, 40, 40);
             }
 
-            if (coordinates1.get(l).equals("miss")) {
+            if (coordinates2.get(l).equals("miss")) {
                 gc.setFill(Color.DARKBLUE);
                 gc.fillRect(l.x, l.y, 40, 40);
+                gc.strokeRect(l.x, l.y, 40, 40);
             }
         }
 
@@ -648,6 +770,84 @@ public class BattleShip extends Application {
 
         for (Location l : ships2.keySet()) {
             Ship current = ships2.get(l);
+            if (current instanceof Carrier) {
+                if (current.dir.equals("vert")) {
+                    gc.drawImage(current.imgvert, l.x, l.y);
+                } else {
+                    gc.drawImage(current.img, l.x, l.y);
+                }
+            }
+            if (current instanceof Bship) {
+                if (current.dir.equals("vert")) {
+                    gc.drawImage(current.imgvert, l.x, l.y);
+                } else {
+                    gc.drawImage(current.img, l.x, l.y);
+                }
+            }
+            if (current instanceof Submarine) {
+                if (current.dir.equals("vert")) {
+                    gc.drawImage(current.imgvert, l.x, l.y);
+                } else {
+                    gc.drawImage(current.img, l.x, l.y);
+                }
+            }
+            if (current instanceof Frigate) {
+                if (current.dir.equals("vert")) {
+                    gc.drawImage(current.imgvert, l.x, l.y);
+                } else {
+                    gc.drawImage(current.img, l.x, l.y);
+                }
+            }
+            if (current instanceof PTBoat) {
+                if (current.dir.equals("vert")) {
+                    gc.drawImage(current.imgvert, l.x, l.y);
+                } else {
+                    gc.drawImage(current.img, l.x, l.y);
+                }
+            }
+        }
+
+        for (Location l : deadships1.keySet()) {
+            Ship current = deadships1.get(l);
+            if (current instanceof Carrier) {
+                if (current.dir.equals("vert")) {
+                    gc.drawImage(current.imgvert, l.x, l.y);
+                } else {
+                    gc.drawImage(current.img, l.x, l.y);
+                }
+            }
+            if (current instanceof Bship) {
+                if (current.dir.equals("vert")) {
+                    gc.drawImage(current.imgvert, l.x, l.y);
+                } else {
+                    gc.drawImage(current.img, l.x, l.y);
+                }
+            }
+            if (current instanceof Submarine) {
+                if (current.dir.equals("vert")) {
+                    gc.drawImage(current.imgvert, l.x, l.y);
+                } else {
+                    gc.drawImage(current.img, l.x, l.y);
+                }
+            }
+            if (current instanceof Frigate) {
+                if (current.dir.equals("vert")) {
+                    gc.drawImage(current.imgvert, l.x, l.y);
+                } else {
+                    gc.drawImage(current.img, l.x, l.y);
+                }
+            }
+            if (current instanceof PTBoat) {
+                if (current.dir.equals("vert")) {
+                    gc.drawImage(current.imgvert, l.x, l.y);
+                } else {
+                    gc.drawImage(current.img, l.x, l.y);
+                }
+            }
+        }
+
+        for (Location l : deadships2.keySet()) {
+            Ship current = deadships2.get(l);
             if (current instanceof Carrier) {
                 if (current.dir.equals("vert")) {
                     gc.drawImage(current.imgvert, l.x, l.y);
