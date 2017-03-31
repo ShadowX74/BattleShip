@@ -7,10 +7,7 @@ package battleship;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
@@ -20,15 +17,10 @@ import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
-import javafx.scene.image.Image;
-import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
-import javafx.scene.layout.StackPane;
 import javafx.scene.text.*;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 
 /**
@@ -50,9 +42,10 @@ public class BattleShip extends Application {
     int action = 2;
     int ship = 1;
     int placeholder = 1;
-    int counter = 0;
     boolean reset = true;
     boolean killedThisTurn = false;
+    boolean actionMade = false;
+    int counter = 0;
     Location loc;
     Ship current;
     Map<Location, String> coordinates1 = new HashMap();
@@ -193,7 +186,7 @@ public class BattleShip extends Application {
                     } else {
                         Font larger = new Font("Regular", 20);
                         gc.setFont(larger);
-                        move(gc);
+                        move(gc, canvas);
                     }
                 }
             }
@@ -622,17 +615,26 @@ public class BattleShip extends Application {
         }
     }
 
-    private void move(GraphicsContext gc) {
+    private void move(GraphicsContext gc, Canvas canvas) {
         if (turn % 2 == action % 2) {
             gc.clearRect(0, 0, 800, 50);
             String text = "Player " + (turn % 2 + 1) + " please choose where to fire.";
             gc.setFill(Color.BLACK);
             gc.fillText(text, 23, 36);
             gc.strokeText(text, 23, 36);
-        } else if (counter >= 25) {
+        } else if (actionMade && input.contains("ENTER")) {
             turn++;
-            counter = 0;
+            actionMade = false;
             killedThisTurn = false;
+            input.remove("ENTER");
+            counter = 0;
+        } else if (counter >= 100) {
+            gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
+            String text = "Please switch players. Press [Enter] when done.";
+            gc.setFill(Color.BLACK);
+            gc.fillText(text, 23, canvas.getHeight() / 2 - 50);
+            gc.strokeText(text, 23, canvas.getHeight() / 2 - 50);
+            actionMade = true;
         } else {
             checkDeath();
             if (killedThisTurn) {
