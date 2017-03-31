@@ -174,11 +174,30 @@ public class BattleShip extends Application {
             public void handle(long currentNanoTime) {
                 if (turn == -1) {
                     gc.clearRect(0, 0, 800, 50);
-                    String text = "Player " + checkWinner() + " wins!";
+                    String text = "Player " + checkWinner() + " wins! Press [R] to reset.";
                     gc.setFill(Color.BLACK);
                     gc.fillText(text, 23, 36);
                     gc.strokeText(text, 23, 36);
                     showBoard(gc);
+                    if (input.contains("R")) {
+                        turn = 0;
+                        action = 2;
+                        ship = 1;
+                        placeholder = 1;
+                        reset = true;
+                        killedThisTurn = false;
+                        actionMade = false;
+                        counter = 0;
+                        coordinates1.clear();
+                        coordinates2.clear();
+                        ships1.clear();
+                        ships2.clear();
+                        deadships1.clear();
+                        deadships2.clear();
+                        input.clear();
+                        Font orig = new Font("Regular", 13);
+                        gc.setFont(orig);
+                    }
                 } else {
                     update(gc, canvas);
                     if (turn < 2) {
